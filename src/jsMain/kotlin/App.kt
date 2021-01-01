@@ -7,9 +7,11 @@ private val scope = MainScope()
 
 val App = functionalComponent<RProps> { _ ->
     println("App...")
-    val (jobList, setJobList) = useState(emptyList<SpleeterJob>())
+    var jobList: List<SpleeterJob> by useState(emptyList())
 
-    suspend fun refreshJobs() = setJobList(Api.getJobList())
+    suspend fun refreshJobs() {
+        jobList = Api.getJobList()
+    }
 
 
     useEffect(dependencies = listOf()) {
@@ -37,7 +39,7 @@ val App = functionalComponent<RProps> { _ ->
         }
     }
 
-    child(UploadComponent::class) {
+    child(Upload) {
         attrs {
             onUploadComplete = { refreshJobs() }
         }

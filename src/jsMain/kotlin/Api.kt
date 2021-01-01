@@ -45,16 +45,12 @@ object Api {
 
 
 
-
-
-
     suspend fun uploadData(
 //        uploadFiles: Map<String, File>,
         fileName: String,
-        bytes: ByteArray,
-        successBlock: suspend (String) -> Unit
-    ) {
-        jsonClient.post<HttpResponse> {
+        bytes: ByteArray
+    ): HttpResponse {
+        return jsonClient.post<HttpResponse> {
 //            url {
 //                protocol = URLProtocol.HTTP
 ////                host = "api.server.com"
@@ -87,8 +83,6 @@ object Api {
 //                    }
                 }
             )
-        }.also { response ->
-            successBlock(response.call.receive<String>())
         }
     }
 
