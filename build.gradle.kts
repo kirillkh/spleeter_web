@@ -85,20 +85,20 @@ kotlin {
                 implementation("org.jetbrains:kotlin-react:17.0.0-$kotlinJsVersion")
                 implementation("org.jetbrains:kotlin-react-dom:17.0.0-$kotlinJsVersion")
                 implementation("org.jetbrains:kotlin-react-router-dom:5.2.0-$kotlinJsVersion")
-                implementation(npm("react", "17.0.0"))
-                implementation(npm("react-dom", "17.0.0"))
+//                implementation(npm("react", "17.0.0"))
+//                implementation(npm("react-dom", "17.0.0"))
 
                 implementation("org.jetbrains:kotlin-redux:4.0.5-$kotlinJsVersion")
 
 //                implementation("org.jetbrains:kotlin-styled:1.0.0-pre.110-kotlin-1.4.0")
 //                implementation("org.jetbrains:kotlin-css-js:1.0.0-pre.110-kotlin-1.4.0")
                 implementation("org.jetbrains:kotlin-styled:5.2.0-$kotlinJsVersion")
-                implementation("org.jetbrains:kotlin-css-js:1.0.0-$kotlinJsVersion")
-                implementation("com.ccfraser.muirwik:muirwik-components:$muirwikComponentVersion")
-                implementation(npm("styled-components", "5.2.1"))
-                implementation(npm("inline-style-prefixer", "6.0.0"))
-                implementation(npm("@material-ui/core", "^4.9.14"))
-                implementation(npm("react-hot-loader", "^4.12.20"))
+//                implementation("org.jetbrains:kotlin-css-js:1.0.0-$kotlinJsVersion")
+//                implementation("com.ccfraser.muirwik:muirwik-components:$muirwikComponentVersion")
+//                implementation(npm("styled-components", "5.2.1"))
+//                implementation(npm("inline-style-prefixer", "6.0.0"))
+//                implementation(npm("@material-ui/core", "^4.9.14"))
+//                implementation(npm("react-hot-loader", "^4.12.20"))
             }
         }
     }

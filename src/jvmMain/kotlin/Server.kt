@@ -96,8 +96,12 @@ fun main() {
                     startJob()
                 }
                 delete("/{id}") {
-                    val (msb, lsb) = call.parameters["id"]?.split(",") ?: error("Invalid delete request")
-                    collection.deleteOne(SpleeterJobModel::id eq UuidWrapper(msb.toLong(), lsb.toLong()))
+                    val encodedUuid = call.parameters["id"]?.split(",")!!
+                        .map { it.toInt() }
+                        .toIntArray()
+                    val uuid = uuidFromIntArray(encodedUuid)
+                    val result = collection.deleteOne(SpleeterJobModel::id eq uuid)
+                    println(result)
                     call.respond(HttpStatusCode.OK)
                 }
             }
