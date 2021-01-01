@@ -1,17 +1,20 @@
 import react.*
 import react.dom.*
-import kotlinext.js.*
 import kotlinx.html.js.*
 import kotlinx.coroutines.*
 
 private val scope = MainScope()
 
 val App = functionalComponent<RProps> { _ ->
-    val (shoppingList, setShoppingList) = useState(emptyList<SpleeterJob>())
+    println("App...")
+    val (jobList, setJobList) = useState(emptyList<SpleeterJob>())
+
+    suspend fun refreshJobs() = setJobList(Api.getJobList())
+
 
     useEffect(dependencies = listOf()) {
         scope.launch {
-            setShoppingList(getShoppingList())
+            refreshJobs()
         }
     }
 
@@ -19,31 +22,24 @@ val App = functionalComponent<RProps> { _ ->
         +"Queue"
     }
     ul {
-        shoppingList.sortedByDescending(SpleeterJob::priority).forEach { item ->
+        jobList.sortedByDescending(SpleeterJob::ts).forEach { item ->
             li {
                 key = item.toString()
-                +"[${item.priority}] ${item.desc} "
+                +"[${item.ts}] ${item.origFileName} "
 
                 attrs.onClickFunction = {
                     scope.launch {
-                        deleteShoppingListItem(item)
-                        setShoppingList(getShoppingList())
+                        Api.deleteJobListItem(item)
+                        refreshJobs()
                     }
                 }
             }
         }
     }
 
-    child(
-        InputComponent,
-        props = jsObject {
-            onSubmit = { input ->
-                val cartItem = SpleeterJob(input.replace("!", ""), input.count { it == '!' })
-                scope.launch {
-                    addShoppingListItem(cartItem)
-                    setShoppingList(getShoppingList())
-                }
-            }
+    child(UploadComponent::class) {
+        attrs {
+            onUploadComplete = { refreshJobs() }
         }
-    )
+    }
 }

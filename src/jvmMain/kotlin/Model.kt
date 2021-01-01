@@ -1,4 +1,4 @@
-import java.io.File
+import kotlinx.serialization.Serializable
 
 /**
  * Created by kirillkh on 12/23/2020.
@@ -9,11 +9,9 @@ import java.io.File
 //    class InProgress(val status: String, val filePath: String, ts: Long, rtjob: RuntimeJob): SpleeterJobModel(ts)
 //}
 
-enum class JobStatus {
-    Success, Failure, InProgress
-}
-
-data class SpleeterJobModel(val ts: Long, val status: JobStatus,
+@Serializable
+data class SpleeterJobModel(val id: UuidWrapper,
+                            val ts: Long, val status: JobStatus,
                             val origFilePath: String,
                             val resultFilePath: String?,
                             val failureReason: String?)
