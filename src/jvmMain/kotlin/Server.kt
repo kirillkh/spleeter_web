@@ -27,7 +27,6 @@ import kotlin.collections.*
 val MAX_JOBS = 10
 
 val connectionString = System.getenv("MONGODB_URI")
-    ?: "mongodb://admin:Y.Zhy!jl766gnJlz@127.0.0.1"
 
 //val client = KMongo.createClient("mongodb://admin:Y.Zhy!jl766gnJlz@127.0.0.1").coroutine
 val settings = MongoClientSettings.builder()
@@ -90,10 +89,12 @@ fun main() {
                     startJob()
                 }
                 delete("/{id}") {
-                    val encodedUuid = call.parameters["id"]?.split(",")!!
-                        .map { it.toInt() }
-                        .toIntArray()
-                    val uuid = uuidFromIntArray(encodedUuid)
+                    val uuid = decodeUuid(call.parameters["id"]!!)
+                    deleteJob(collection.findOne(SpleeterJobModel::id eq uuid)!!)
+                    call.respond(HttpStatusCode.OK)
+                }
+                get("/d/{id}") {
+                    val uuid = decodeUuid(call.parameters["id"]!!)
                     deleteJob(collection.findOne(SpleeterJobModel::id eq uuid)!!)
                     call.respond(HttpStatusCode.OK)
                 }
@@ -152,6 +153,13 @@ suspend fun PipelineContext<Unit, ApplicationCall>.startJob() {
 
 fun <T, U> List<T>.mapLet(block: T.()->U): List<U> = map {
     it.let(block)
+}
+
+fun decodeUuid(param: String): UuidWrapper {
+    val encodedUuid = param.split(",")
+        .map { it.toInt() }
+        .toIntArray()
+    return uuidFromIntArray(encodedUuid)
 }
 
 suspend fun jobsModelToUi(): List<SpleeterJob> =
