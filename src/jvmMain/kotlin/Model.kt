@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SpleeterJobModel(val id: UuidWrapper,
                             val ts: Long, val status: JobStatus,
-                            val origFilePath: String,
-                            val resultFilePath: String?,
+                            val origFileName: String,
+                            val srcFilePath: String,
+                            val dstFilePath: String?,
                             val failureReason: String?)

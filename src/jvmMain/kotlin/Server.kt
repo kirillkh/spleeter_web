@@ -24,12 +24,6 @@ import kotlin.collections.*
 
 //import org.litote.kmongo.util.idValue
 
-//val shoppingList = mutableListOf(
-//    ShoppingListItem("Cucumbers 🥒", 1),
-//    ShoppingListItem("Tomatoes 🍅", 2),
-//    ShoppingListItem("Orange Juice 🍊", 3)
-//)
-
 val MAX_JOBS = 10
 
 val connectionString = System.getenv("MONGODB_URI")
@@ -100,8 +94,7 @@ fun main() {
                         .map { it.toInt() }
                         .toIntArray()
                     val uuid = uuidFromIntArray(encodedUuid)
-                    val result = collection.deleteOne(SpleeterJobModel::id eq uuid)
-                    println(result)
+                    deleteJob(collection.findOne(SpleeterJobModel::id eq uuid)!!)
                     call.respond(HttpStatusCode.OK)
                 }
             }
@@ -144,7 +137,9 @@ suspend fun PipelineContext<Unit, ApplicationCall>.startJob() {
                             deleteJob(it)
                         }
 
-                val job = SpleeterJobModel(UuidWrapper(uuid4()), System.currentTimeMillis(), JobStatus.InProgress, file.absolutePath, null, null)
+                val job = SpleeterJobModel(
+                    UuidWrapper(uuid4()), System.currentTimeMillis(), JobStatus.InProgress, part.originalFileName!!,
+                    file.absolutePath, null, null)
                 collection.insertOne(job)
             }
         }
@@ -161,7 +156,7 @@ fun <T, U> List<T>.mapLet(block: T.()->U): List<U> = map {
 
 suspend fun jobsModelToUi(): List<SpleeterJob> =
     collection.find().toList().mapLet {
-        SpleeterJob(id, ts, status, origFilePath, resultFilePath, failureReason)
+        SpleeterJob(id, ts, status, origFileName, dstFilePath, failureReason)
     }
 
 suspend fun tryWithMsg(block: suspend () -> Unit) {
@@ -177,12 +172,12 @@ suspend fun deleteJob(job: SpleeterJobModel) {
         if (job.status == JobStatus.InProgress)
             cancelJob(job)
         else
-            File(job.origFilePath).delete()
+            File(job.srcFilePath).delete()
     }
 
     tryWithMsg {
         if(job.status == JobStatus.Success)
-            File(job.resultFilePath!!).delete()
+            File(job.dstFilePath!!).delete()
     }
 
     tryWithMsg {
@@ -192,7 +187,7 @@ suspend fun deleteJob(job: SpleeterJobModel) {
 
 suspend fun cancelJob(job: SpleeterJobModel) {
     val copy = job.copy(status = JobStatus.Failure, failureReason = "restart")
-    File(job.origFilePath).delete()
+    File(job.srcFilePath).delete()
 //    job.idValue
 //    val r = collection.replaceOneById(job.id, copy)
     val x = collection.find(SpleeterJobModel::id eq job.id).first()

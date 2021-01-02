@@ -59,7 +59,6 @@ val Upload = functionalComponent<UploadProps> { props ->
             text("Upload")
             onClickFunction = { save() }
         }
-
     }
 }
 

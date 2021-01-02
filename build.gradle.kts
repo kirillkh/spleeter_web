@@ -37,8 +37,8 @@ kotlin {
     }
     js(IR) {
         browser {
-            binaries.executable()
         }
+        binaries.executable()
 
         useCommonJs()
     }

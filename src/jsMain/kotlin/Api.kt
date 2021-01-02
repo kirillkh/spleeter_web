@@ -46,9 +46,7 @@ object Api {
 
     suspend fun deleteJobListItem(spleeterJob: SpleeterJob) {
         println("deleteShoppingListItem()")
-        val (msb, lsb) =  spleeterJob.id.let { Pair(it.msb, it.lsb) }
         val encoded = uuidToIntArray(spleeterJob.id).joinToString(",")
-
         jsonClient.delete<Unit>(endpoint + SpleeterJob.path + "/$encoded")
     }
 }
