@@ -107,10 +107,10 @@ kotlin {
 application {
     mainClassName = "ServerKt"
     applicationDefaultJvmArgs = listOf(
-//        "--add-opens",
-//        "java.base/jdk.internal.misc=ALL-UNNAMED",
-//        "-Dio.netty.tryReflectionSetAccessible=true",
-        "-Dio.netty.noUnsafe=true")
+        "--add-opens",
+        "java.base/jdk.internal.misc=ALL-UNNAMED",
+        "-Dio.netty.tryReflectionSetAccessible=true"
+    )
 }
 
 // include JS artifacts in any JAR we generate

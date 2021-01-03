@@ -20,23 +20,32 @@ import org.litote.kmongo.reactivestreams.KMongo
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.file.Files
+import java.util.concurrent.Executors
 import kotlin.collections.*
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.Path
 
 //import org.litote.kmongo.util.idValue
 
 val MAX_JOBS = 10
 
 val connectionString = System.getenv("MONGODB_URI")
+val srcPath = System.getenv("SRC_PATH") ?: "/tmp/spleeter_web/src"
+val dstPath = System.getenv("DST_PATH") ?: "/tmp/spleeter_web/dst"
 
-//val client = KMongo.createClient("mongodb://admin:Y.Zhy!jl766gnJlz@127.0.0.1").coroutine
 val settings = MongoClientSettings.builder()
     .uuidRepresentation(UuidRepresentation.STANDARD)
     .applyConnectionString(ConnectionString(connectionString)).build()
 val client = KMongo.createClient(settings).coroutine
 
-val database = client.getDatabase("shoppingList")
+val database = client.getDatabase("spleeter_web")
 val collection = database.getCollection<SpleeterJobModel>()
 
+//val bgJobContext = newFixedThreadPoolContext(2, "bgJobContext")
+val bgJobDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+
+@ExperimentalPathApi
 fun main() {
     onStart()
 
@@ -66,22 +75,17 @@ fun main() {
         install(Compression) {
             gzip()
         }
+        install(StatusPages) {
+            exception<Throwable> { cause ->
+                cause.printStackTrace()
+                println("------------------")
+                call.respond(HttpStatusCode.InternalServerError, "Internal Server Error")
+                throw cause
+            }
+        }
 
         routing {
             route(SpleeterJob.path) {
-//                get {
-//                    call.respond(shoppingList)
-//                }
-//                post {
-//                    shoppingList += call.receive<ShoppingListItem>()
-//                    call.respond(HttpStatusCode.OK)
-//                }
-//                delete("/{id}") {
-//                    val id = call.parameters["id"]?.toInt() ?: error("Invalid delete request")
-//                    shoppingList.removeIf { it.id == id }
-//                    call.respond(HttpStatusCode.OK)
-//                }
-
                 get {
                     call.respond(jobsModelToUi())
                 }
@@ -93,10 +97,16 @@ fun main() {
                     deleteJob(collection.findOne(SpleeterJobModel::id eq uuid)!!)
                     call.respond(HttpStatusCode.OK)
                 }
-                get("/d/{id}") {
+                get("/d/{id}/{dlName}") {
                     val uuid = decodeUuid(call.parameters["id"]!!)
-                    deleteJob(collection.findOne(SpleeterJobModel::id eq uuid)!!)
-                    call.respond(HttpStatusCode.OK)
+                    val job = collection.findOne(SpleeterJobModel::id eq uuid)!!
+                    val file = File(job.dstFilePath!!)
+                    if(file.exists()) {
+                        call.response.header("Content-Disposition", "attachment")
+                        call.respondFile(file)
+                    } else {
+                        call.respond(HttpStatusCode.NotFound)
+                    }
                 }
             }
 
@@ -125,9 +135,8 @@ suspend fun PipelineContext<Unit, ApplicationCall>.startJob() {
 //            }
             is PartData.FileItem -> {
                 val ext = File(part.originalFileName!!).extension
-                val uploadDir = "m:/MoM/asdf"
 //                val file = File(uploadDir, "upload-${System.currentTimeMillis()}-${session.userId.hashCode()}-${title.hashCode()}.$ext")
-                val file = File(uploadDir, "upload-${System.currentTimeMillis()}.$ext")
+                val file = File(srcPath, "upload-${System.currentTimeMillis()}.$ext")
                 part.streamProvider().use { input -> file.outputStream().buffered().use { output -> input.copyToSuspend(output) } }
 
                 if(collection.countDocuments() >= MAX_JOBS)
@@ -142,6 +151,8 @@ suspend fun PipelineContext<Unit, ApplicationCall>.startJob() {
                     UuidWrapper(uuid4()), System.currentTimeMillis(), JobStatus.InProgress, part.originalFileName!!,
                     file.absolutePath, null, null)
                 collection.insertOne(job)
+
+                launchJob(job)
             }
         }
 
@@ -204,7 +215,11 @@ suspend fun cancelJob(job: SpleeterJobModel) {
     println("r = $r")
 }
 
+@ExperimentalPathApi
 fun onStart() {
+    Files.createDirectories(Path(srcPath))
+    Files.createDirectories(Path(dstPath))
+
 //    collection.deleteMany()
     runBlocking {
         collection
@@ -242,4 +257,64 @@ suspend fun InputStream.copyToSuspend(
         }
         return@withContext bytesCopied
     }
+}
+
+
+
+fun launchJob(job: SpleeterJobModel) {
+    GlobalScope.launch(bgJobDispatcher) {
+        val src = File(job.srcFilePath)
+        val fileNameBase = src.nameWithoutExtension
+        val resultBase = "$dstPath/$fileNameBase"
+        val accompanimentResult = "$resultBase/accompaniment.wav"
+        val vocalsResult = "$resultBase/vocals.wav"
+        val result = File("$dstPath/$fileNameBase-dst.mp3")
+        try {
+            val pb = ProcessBuilder(
+                "/usr/bin/spleeter", "separate",
+                "-i", src.absolutePath,
+                "-p", "spleeter:2stems",
+                "-o", dstPath
+            )
+            println("DEBUG: starting process: " + pb.command().joinToString(" "))
+            val proc = pb.start()
+            val spleeterResult = proc.waitFor()
+            if(spleeterResult != 0)
+                println("ERROR: spleeter JOB failed with $spleeterResult")
+            if(!File(accompanimentResult).exists())
+                println("ERROR: $accompanimentResult does not exist after spleeter")
+
+            val pb2 = ProcessBuilder(
+                "/usr/bin/parallel", "/usr/bin/ffmpeg", "-i", "{}", "-qscale:a", "0", result.absolutePath,
+                ":::", accompanimentResult
+            )
+            println("DEBUG: starting process: " + pb2.command().joinToString(" "))
+            val proc2 = pb2.start()
+            val parallelResult = proc2.waitFor()
+            if(parallelResult != 0)
+                println("ERROR: parallel JOB failed with $parallelResult")
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        } finally {
+            try {
+                File(accompanimentResult).delete()
+                File(vocalsResult).delete()
+                File(resultBase).delete()
+            } finally {
+            }
+        }
+
+        val status = if (result.exists()) JobStatus.Success else JobStatus.Failure
+
+        if(collection.findOne(SpleeterJobModel::id eq job.id) != null) {
+            collection.replaceOne(
+                SpleeterJobModel::id eq job.id,
+                job.copy(status = status, dstFilePath = result.absolutePath)
+            )
+        } else {
+            result.delete()
+        }
+    }
+
+    println("----------------------------- launched job!")
 }

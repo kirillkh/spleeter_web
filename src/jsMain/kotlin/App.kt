@@ -1,3 +1,4 @@
+import Api.downloadUri
 import QueueFieldStyles.actionsField
 import QueueFieldStyles.dateField
 import QueueFieldStyles.nameField
@@ -7,6 +8,7 @@ import QueueStyles.queueList
 import StatusStyles.statusFieldFailure
 import StatusStyles.statusFieldInProgress
 import StatusStyles.statusFieldSuccess
+import kotlinx.browser.window
 import kotlinx.coroutines.*
 import kotlinx.html.js.*
 import react.*
@@ -16,12 +18,14 @@ import kotlin.js.Date
 
 private val scope = MainScope()
 
+var timer: dynamic = null
 
 val App = functionalComponent<RProps> { _ ->
     println("App...")
     var jobList: List<SpleeterJob> by useState(emptyList())
 
     suspend fun refreshJobs() {
+        println("refreshJobs() called")
         jobList = Api.getJobList()
     }
 
@@ -36,6 +40,21 @@ val App = functionalComponent<RProps> { _ ->
     useEffect(dependencies = listOf()) {
         scope.launch {
             refreshJobs()
+        }
+    }
+
+    useEffect {
+        val handler = {
+            scope.launch {
+                refreshJobs()
+            }
+        }
+
+        scope.launch {
+            println("calling2 setTimeout()")
+            if(timer != null)
+                window.clearTimeout(timer)
+            timer = window.setTimeout(handler, 1000)
         }
     }
 
@@ -83,8 +102,8 @@ val App = functionalComponent<RProps> { _ ->
                     styledDiv {
                         css { +actionsField }
 
-                        if (item.status == JobStatus.Success || true) {
-                            styledA(href = item.resultUri) {
+                        if (item.status == JobStatus.Success) {
+                            styledA(href = downloadUri(item)) {
                                 css { +actionLink }
                                 +"download"
                             }

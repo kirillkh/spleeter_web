@@ -1,20 +1,10 @@
-import io.ktor.http.*
 import io.ktor.client.*
-import io.ktor.client.call.*
+import io.ktor.client.features.json.*
+import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.serializer.KotlinxSerializer
-import io.ktor.client.request.forms.*
-import io.ktor.client.statement.*
-import io.ktor.utils.io.bits.*
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-
 import kotlinx.browser.window
-import org.khronos.webgl.Uint8Array
 import org.w3c.xhr.FormData
 import org.w3c.xhr.XMLHttpRequest
-import org.w3c.xhr.XMLHttpRequestUpload
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.js.Date
@@ -25,6 +15,15 @@ object Api {
     val jsonClient = HttpClient {
         install(JsonFeature) { serializer = KotlinxSerializer() }
     }
+
+    fun uuidToParam(spleeterJob: SpleeterJob) =
+        uuidToIntArray(spleeterJob.id).joinToString(",")
+
+    fun downloadUri(item: SpleeterJob): String {
+        val dlName = item.origFileName.substringBeforeLast('.') + "-minus.mp3"
+        return endpoint + SpleeterJob.path + "/d/${uuidToParam(item)}/$dlName"
+    }
+
 
     suspend fun uploadData(data: FormData): String {
         val xhr = XMLHttpRequest()
@@ -40,13 +39,13 @@ object Api {
     }
 
     suspend fun getJobList(): List<SpleeterJob> {
-        println("getShoppingList()")
+        println("getJobList()")
         return jsonClient.get(endpoint + SpleeterJob.path)
     }
 
     suspend fun deleteJobListItem(spleeterJob: SpleeterJob) {
-        println("deleteShoppingListItem()")
-        val encoded = uuidToIntArray(spleeterJob.id).joinToString(",")
+        println("deleteJobListItem()")
+        val encoded = uuidToParam(spleeterJob)
         jsonClient.delete<Unit>(endpoint + SpleeterJob.path + "/$encoded")
     }
 }
