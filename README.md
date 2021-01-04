@@ -28,6 +28,8 @@ How to run:
 4. If you see error message `UnsatisfiedLinkError: no netty_transport_native_epoll`, just ignore it.
 5. Browse to <your_host>:9090
 
+![Screenshot](https://user-images.githubusercontent.com/583047/103495046-085c3200-4e42-11eb-8d32-a23d1edeac9c.jpg)
+
 ## For developers
 To me, this project is as much a practical thing as an opportunity to play with fun new technology. It explores Kotlin 
 Multiplatform - a way to build fullstack apps in Kotlin alone.
