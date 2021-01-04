@@ -285,8 +285,7 @@ fun launchJob(job: SpleeterJobModel) {
                 println("ERROR: $accompanimentResult does not exist after spleeter")
 
             val pb2 = ProcessBuilder(
-                "/usr/bin/parallel", "/usr/bin/ffmpeg", "-i", "{}", "-qscale:a", "0", result.absolutePath,
-                ":::", accompanimentResult
+                "/usr/bin/ffmpeg", "-i", accompanimentResult, "-qscale:a", "0", result.absolutePath
             )
             println("DEBUG: starting process: " + pb2.command().joinToString(" "))
             val proc2 = pb2.start()
