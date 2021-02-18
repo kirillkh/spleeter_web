@@ -50,6 +50,7 @@ fun main() {
     onStart()
 
     embeddedServer(Netty, 9090) {
+        install(ConditionalHeaders)
         install(CachingHeaders) {
             options { outgoingContent ->
                 val cachingOptions = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 24 * 60 * 60))
@@ -136,6 +137,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.startJob() {
             is PartData.FileItem -> {
                 val ext = File(part.originalFileName!!).extension
 //                val file = File(uploadDir, "upload-${System.currentTimeMillis()}-${session.userId.hashCode()}-${title.hashCode()}.$ext")
+                File(srcPath).mkdirs()
                 val file = File(srcPath, "upload-${System.currentTimeMillis()}.$ext")
                 part.streamProvider().use { input -> file.outputStream().buffered().use { output -> input.copyToSuspend(output) } }
 
