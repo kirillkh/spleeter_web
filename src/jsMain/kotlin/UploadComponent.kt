@@ -12,15 +12,16 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.files.Blob
 import org.w3c.xhr.FormData
-import react.RProps
+import react.PropsWithChildren
+import react.dom.attrs
 import react.dom.button
 import react.dom.input
-import react.functionalComponent
+import react.fc
 import react.useState
 
 private val scope = MainScope()
 
-external interface UploadProps: RProps {
+external interface UploadProps: PropsWithChildren {
     var onUploadComplete: suspend () -> Unit
 }
 
@@ -30,7 +31,7 @@ fun useStringState(v: String? = null) = useState(v)
 val Event.targetInputValue: String
     get() = (target as? HTMLInputElement)?.value ?: (target as? HTMLTextAreaElement)?.value ?: ""
 
-val Upload = functionalComponent<UploadProps> { props ->
+val Upload = fc<UploadProps> { props ->
     var fileName: String? by useStringState()
     var file: Blob? by useState(null)
 

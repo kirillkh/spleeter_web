@@ -1,15 +1,19 @@
-import react.*
-import react.dom.*
-import kotlinx.html.js.*
 import kotlinx.html.InputType
-import org.w3c.dom.events.Event
+import kotlinx.html.js.onChangeFunction
+import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.Event
+import react.PropsWithChildren
+import react.dom.form
+import react.dom.input
+import react.fc
+import react.useState
 
-external interface InputProps : RProps {
+external interface InputProps : PropsWithChildren {
     var onSubmit: (String) -> Unit
 }
 
-val InputComponent = functionalComponent<InputProps> { props ->
+val InputComponent = fc<InputProps> { props ->
     val (text, setText) = useState("")
 
     val submitHandler: (Event) -> Unit = {

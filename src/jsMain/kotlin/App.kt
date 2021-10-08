@@ -20,7 +20,7 @@ private val scope = MainScope()
 
 var timer: dynamic = null
 
-val App = functionalComponent<RProps> { _ ->
+val App = fc<PropsWithChildren> { _ ->
     println("App...")
     var jobList: List<SpleeterJob> by useState(emptyList())
 
@@ -37,7 +37,7 @@ val App = functionalComponent<RProps> { _ ->
     }
 
 
-    useEffect(dependencies = listOf()) {
+    useEffect {
         scope.launch {
             refreshJobs()
         }

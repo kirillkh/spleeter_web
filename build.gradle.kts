@@ -1,34 +1,25 @@
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-//val kotlinVersion = "1.4.0"
-val kotlinVersion = "1.4.21"
-//val serializationVersion = "1.0.0-RC"
-val serializationVersion = "1.0.1"
-//val ktorVersion = "1.4.0"
-val ktorVersion = "1.4.3"
+val kotlinVersion = "1.5.31"
+val serializationVersion = "1.2.1"
+val ktorVersion = "1.6.4"
 
 val muirwikComponentVersion = "0.6.3"
-//val kotlinJsVersion = "pre.129-kotlin-$kotlinVersion"
-val kotlinJsVersion = "pre.133-kotlin-$kotlinVersion"
+val kotlinJsVersion = "pre.254-kotlin-$kotlinVersion"
 
 
 plugins {
-//    kotlin("multiplatform") version "1.4.0"
-    kotlin("multiplatform") version "1.4.20"
+    kotlin("multiplatform") version "1.5.31"
     application //to run JVM part
-//    kotlin("plugin.serialization") version "1.4.0"
-    kotlin("plugin.serialization") version "1.4.20"
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "org.f0cus"
+version = "1.0.2-SNAPSHOT"
 
 repositories {
-    maven { setUrl("https://dl.bintray.com/kotlin/kotlin-eap") }
     mavenCentral()
-    jcenter()
-    maven("https://kotlin.bintray.com/kotlin-js-wrappers/") // react, styled, ...
 }
 
 kotlin {
@@ -45,8 +36,10 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
+
                 implementation(kotlin("stdlib-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("com.benasher44:uuid:0.2.3")
             }
@@ -60,6 +53,10 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+//                compileOnly(kotlin("gradle-plugin", version = kotlinVersion))
+//                compileOnly(kotlin("serialization", version = kotlinVersion))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.5.2")
+
                 implementation("io.ktor:ktor-serialization:$ktorVersion")
                 implementation("io.ktor:ktor-server-core:$ktorVersion")
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -82,17 +79,17 @@ kotlin {
 
 //                implementation("org.jetbrains:kotlin-react:16.13.1-$kotlinJsVersion")
 //                implementation("org.jetbrains:kotlin-react-dom:16.13.1-$kotlinJsVersion")
-                implementation("org.jetbrains:kotlin-react:17.0.0-$kotlinJsVersion")
-                implementation("org.jetbrains:kotlin-react-dom:17.0.0-$kotlinJsVersion")
-                implementation("org.jetbrains:kotlin-react-router-dom:5.2.0-$kotlinJsVersion")
-//                implementation(npm("react", "17.0.0"))
-//                implementation(npm("react-dom", "17.0.0"))
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react:17.0.2-$kotlinJsVersion")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:17.0.2-$kotlinJsVersion")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:5.2.0-$kotlinJsVersion")
+//                implementation(npm("react", "17.0.2"))
+//                implementation(npm("react-dom", "17.0.2"))
 
-                implementation("org.jetbrains:kotlin-redux:4.0.5-$kotlinJsVersion")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-redux:7.2.4-$kotlinJsVersion")
 
 //                implementation("org.jetbrains:kotlin-styled:1.0.0-pre.110-kotlin-1.4.0")
 //                implementation("org.jetbrains:kotlin-css-js:1.0.0-pre.110-kotlin-1.4.0")
-                implementation("org.jetbrains:kotlin-styled:5.2.0-$kotlinJsVersion")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-styled:5.3.1-$kotlinJsVersion")
 //                implementation("org.jetbrains:kotlin-css-js:1.0.0-$kotlinJsVersion")
 //                implementation("com.ccfraser.muirwik:muirwik-components:$muirwikComponentVersion")
 //                implementation(npm("styled-components", "5.2.1"))
@@ -128,7 +125,7 @@ tasks.getByName<Jar>("jvmJar") {
 tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions {
-            jvmTarget = "1.8"
+            jvmTarget = "11"
         }
     }
 }

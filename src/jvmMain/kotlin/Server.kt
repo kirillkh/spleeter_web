@@ -12,6 +12,8 @@ import io.ktor.serialization.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.util.pipeline.*
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.nio.*
 import kotlinx.coroutines.*
 import org.bson.UuidRepresentation
 import org.litote.kmongo.*
@@ -25,6 +27,7 @@ import java.util.concurrent.Executors
 import kotlin.collections.*
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
+import kotlin.io.use
 
 //import org.litote.kmongo.util.idValue
 
@@ -43,7 +46,8 @@ val database = client.getDatabase("spleeter_web")
 val collection = database.getCollection<SpleeterJobModel>()
 
 //val bgJobContext = newFixedThreadPoolContext(2, "bgJobContext")
-val bgJobDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+//val bgJobDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+val bgJobExecutor = Executors.newFixedThreadPool(2)
 
 @ExperimentalPathApi
 fun main() {
@@ -264,7 +268,7 @@ suspend fun InputStream.copyToSuspend(
 
 
 fun launchJob(job: SpleeterJobModel) {
-    GlobalScope.launch(bgJobDispatcher) {
+    bgJobExecutor.execute {
         val src = File(job.srcFilePath)
         val fileNameBase = src.nameWithoutExtension
         val resultBase = "$dstPath/$fileNameBase"
@@ -274,7 +278,7 @@ fun launchJob(job: SpleeterJobModel) {
         try {
             val pb = ProcessBuilder(
                 "/usr/bin/spleeter", "separate",
-                "-i", src.absolutePath,
+                src.absolutePath,
                 "-p", "spleeter:2stems",
                 "-o", dstPath
             )
@@ -307,13 +311,15 @@ fun launchJob(job: SpleeterJobModel) {
 
         val status = if (result.exists()) JobStatus.Success else JobStatus.Failure
 
-        if(collection.findOne(SpleeterJobModel::id eq job.id) != null) {
-            collection.replaceOne(
-                SpleeterJobModel::id eq job.id,
-                job.copy(status = status, dstFilePath = result.absolutePath)
-            )
-        } else {
-            result.delete()
+        runBlocking {
+            if (collection.findOne(SpleeterJobModel::id eq job.id) != null) {
+                collection.replaceOne(
+                    SpleeterJobModel::id eq job.id,
+                    job.copy(status = status, dstFilePath = result.absolutePath)
+                )
+            } else {
+                result.delete()
+            }
         }
     }
 
